@@ -5,7 +5,14 @@ import transcription as t
 
 
 def main() -> None:
-    file_url = sys.argv[1] if len(sys.argv) > 1 else "./audio/police_and_border_call_estonia.m4a"
+    if len(sys.argv) < 2:
+        print(
+            "Usage: python3 audio2txtSpeakerLabeled.py <path_or_url>",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+
+    file_url = sys.argv[1]
 
     if not file_url.startswith(("http://", "https://")) and not os.path.exists(file_url):
         raise FileNotFoundError(

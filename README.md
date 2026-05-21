@@ -60,4 +60,4 @@ python3 audio2txt.py
 python3 audio2txtSpeakerLabeled.py [path_or_url]
 ```
 
-Transcribes one file with speaker labels and writes `conversation.json`. Defaults to `./audio/police_and_border_call_estonia.m4a` if no argument is given.
+Transcribes one file with speaker labels and writes `conversation.json`. Requires a path or URL argument.
