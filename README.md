@@ -57,7 +57,7 @@ python3 audio2txt.py
 ### Speaker-labeled (single file)
 
 ```bash
-python3 audio2txtSpeakerLabeled.py [path_or_url]
+python3 audio2txtSpeakerLabeled.py ./audio/your_file.m4a
 ```
 
-Transcribes one file with speaker labels and writes `conversation.json`. Requires a path or URL argument.
+Transcribes one file with speaker labels and writes `conversation.json`. Audio files live in `./audio/` by default; you can pass a filename (e.g. `recording.m4a`), a path under `./audio/`, a full path, or a URL.

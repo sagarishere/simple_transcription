@@ -301,6 +301,7 @@ class TranscriptionApp:
     def browse_speaker_source(self) -> None:
         path = filedialog.askopenfilename(
             title="Select audio file",
+            initialdir=os.path.abspath(t.AUDIO_DIR),
             filetypes=[
                 ("Audio files", "*.mp3 *.m4a *.wav *.mp4 *.aac *.flac *.ogg *.webm"),
                 ("All files", "*.*"),
@@ -352,11 +353,12 @@ class TranscriptionApp:
             messagebox.showerror("Speaker-labeled", "Select or enter an audio source.")
             return
 
+        source = t.resolve_audio_path(source)
         if not source.startswith(("http://", "https://")) and not os.path.exists(source):
             messagebox.showerror(
                 "Speaker-labeled",
-                f"Audio file not found: {source}\n"
-                "Use a local path or a public http(s) URL.",
+                f"Audio file not found.\n"
+                f"Put files in {t.AUDIO_DIR}/ or choose a valid path or http(s) URL.",
             )
             return
 

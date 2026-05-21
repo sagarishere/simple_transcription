@@ -5,8 +5,8 @@ from typing import Callable
 import assemblyai as aai
 from dotenv import load_dotenv
 
-AUDIO_DIR = "audio"
-TRANSCRIPTS_DIR = "transcripts"
+AUDIO_DIR = "./audio"
+TRANSCRIPTS_DIR = "./transcripts"
 SUPPORTED_EXTENSIONS = {
     ".mp3", ".m4a", ".wav", ".mp4", ".aac", ".flac", ".ogg", ".webm", ".mpeg", ".mpga",
 }
@@ -79,6 +79,26 @@ def init_assemblyai(api_key: str | None = None) -> None:
 def ensure_directories() -> None:
     os.makedirs(AUDIO_DIR, exist_ok=True)
     os.makedirs(TRANSCRIPTS_DIR, exist_ok=True)
+
+
+def resolve_audio_path(path_or_name: str) -> str:
+    """Resolve a path or filename to an existing local file, defaulting to AUDIO_DIR."""
+    value = path_or_name.strip()
+    if value.startswith(("http://", "https://")):
+        return value
+    if os.path.exists(value):
+        return value
+
+    in_audio_dir = os.path.join(AUDIO_DIR, value)
+    if os.path.exists(in_audio_dir):
+        return in_audio_dir
+
+    basename = os.path.basename(value)
+    in_audio_dir = os.path.join(AUDIO_DIR, basename)
+    if os.path.exists(in_audio_dir):
+        return in_audio_dir
+
+    return value
 
 
 def build_transcription_config(
