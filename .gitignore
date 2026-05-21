@@ -6,3 +6,4 @@ conversation.json
 audio/
 venv/
 transcripts
+__pycache__

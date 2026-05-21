@@ -1,74 +1,40 @@
-import json
-import assemblyai as aai
-import os
+import sys
 
-from dotenv import load_dotenv
+import transcription as t
 
-load_dotenv()
 
-api_key = os.getenv("ASSEMBLYAI_API_KEY")
-if not api_key:
-    raise ValueError("Missing ASSEMBLYAI_API_KEY in environment variables.")
+def main() -> None:
+    t.init_assemblyai()
+    t.ensure_directories()
 
-aai.settings.api_key = api_key
+    audio_files = t.list_audio_files()
+    if not audio_files:
+        print(f"No supported audio files found in '{t.AUDIO_DIR}'.")
+        raise SystemExit(0)
 
-AUDIO_DIR = "audio"
-TRANSCRIPTS_DIR = "transcripts"
-SUPPORTED_EXTENSIONS = {".mp3", ".m4a", ".wav", ".mp4", ".aac", ".flac", ".ogg", ".webm", ".mpeg", ".mpga"}
+    pending_files = t.get_pending_files()
+    if not pending_files:
+        print("All audio files already have transcripts.")
+        raise SystemExit(0)
 
-if not os.path.isdir(AUDIO_DIR):
-    raise FileNotFoundError(f"Audio directory not found: {AUDIO_DIR}")
+    print(f"Found {len(pending_files)} file(s) to transcribe.")
 
-os.makedirs(TRANSCRIPTS_DIR, exist_ok=True)
+    def on_progress(current: int, total: int, name: str, status: str) -> None:
+        if status == "transcribing":
+            audio_path = f"{t.AUDIO_DIR}/{name}"
+            print(f"Transcribing ({current}/{total}): {audio_path}")
 
-config = aai.TranscriptionConfig(
-    speech_models=["universal-3-pro", "universal-2"],
-    language_detection=True,
-)
+    results = t.transcribe_batch(on_progress=on_progress)
+    for audio_name, success, message in results:
+        if success:
+            print(message)
+        else:
+            print(f"Failed: {audio_name} -> {message}")
 
-transcriber = aai.Transcriber(config=config)
 
-audio_files = []
-for name in sorted(os.listdir(AUDIO_DIR)):
-    file_path = os.path.join(AUDIO_DIR, name)
-    extension = os.path.splitext(name)[1].lower()
-    if os.path.isfile(file_path) and extension in SUPPORTED_EXTENSIONS:
-        audio_files.append(name)
-
-if not audio_files:
-    print(f"No supported audio files found in '{AUDIO_DIR}'.")
-    raise SystemExit(0)
-
-pending_files = []
-for audio_name in audio_files:
-    base_name, _ = os.path.splitext(audio_name)
-    transcript_path = os.path.join(TRANSCRIPTS_DIR, f"{base_name}.json")
-    if not os.path.exists(transcript_path):
-        pending_files.append(audio_name)
-
-if not pending_files:
-    print("All audio files already have transcripts.")
-    raise SystemExit(0)
-
-print(f"Found {len(pending_files)} file(s) to transcribe.")
-
-for audio_name in pending_files:
-    audio_path = os.path.join(AUDIO_DIR, audio_name)
-    base_name, _ = os.path.splitext(audio_name)
-    transcript_path = os.path.join(TRANSCRIPTS_DIR, f"{base_name}.json")
-
-    print(f"Transcribing: {audio_path}")
-    transcript = transcriber.transcribe(audio_path)
-
-    if transcript.status == aai.TranscriptStatus.error:
-        print(f"Failed: {audio_name} -> {transcript.error}")
-        continue
-
-    payload = {
-        "file_name": audio_name,
-        "transcript": transcript.text or "",
-    }
-    with open(transcript_path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
-
-    print(f"Saved: {transcript_path}")
+if __name__ == "__main__":
+    try:
+        main()
+    except (ValueError, FileNotFoundError) as exc:
+        print(exc, file=sys.stderr)
+        raise SystemExit(1) from exc
